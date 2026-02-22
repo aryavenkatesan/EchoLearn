@@ -1,15 +1,15 @@
 import os
 import re
+import google.generativeai as genai
 from flask import Flask, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
 from pathlib import Path
-from openai import OpenAI
 
 # Load .env file
 load_dotenv(dotenv_path=Path(".env"))
 
-# Initialize OpenAI client with the API key from your .env file
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Configure Gemini with the API key from your .env file
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
@@ -50,23 +50,19 @@ def clean_questions(text: str) -> list:
 
 def call_chatgpt(prompt: str) -> str:
     """
-    Calls the ChatGPT API and returns the cleaned text.
+    Calls the Gemini API and returns the cleaned text.
     """
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",  # or "gpt-4", "gpt-3.5-turbo", etc.
-            messages=[{"role": "system", "content": prompt}],
-            temperature=0.7,
-            max_tokens=500
-        )
-        output = response.choices[0].message.content.strip()
-        print("GPT Output (raw):\n", output)
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content(prompt)
+        output = response.text.strip()
+        print("Gemini Output (raw):\n", output)
         cleaned_output = strip_markdown_characters(output)
-        print("GPT Output (cleaned):\n", cleaned_output)
+        print("Gemini Output (cleaned):\n", cleaned_output)
         return cleaned_output
     except Exception as e:
         error_text = f"Error: {str(e)}"
-        print("GPT Error:", error_text)
+        print("Gemini Error:", error_text)
         return error_text
 
 
